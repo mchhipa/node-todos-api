@@ -14,21 +14,20 @@ app.post('/todos',(req,res)=>{
         text: req.body.text
     })
     todo.save().then((result)=>{
-        res.send(result);
-        console.log(result);
+       return res.send(result);
+        //console.log(result);
     },(err)=>{
-        res.statusStatus(400).send(err);
-        throw new Error("Error Saving todo",err)
+      return  res.statusStatus(400).send(err);
+        //throw new Error("Error Saving todo",err)
     })
 });
 app.get('/todos',(req,res)=>{
     Todo.find({}).then((todos)=>{
-        res.send(todos);
+        return res.send(todos);
     },(err)=>{
-        res.sendStatus(400);
-        res,send(err);
-        //throw new Error("error fetching")
-    })
+       return res.sendStatus(400).send(err);
+        
+    });
 });
 app.get('/todo/:id',(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
@@ -39,7 +38,7 @@ app.get('/todo/:id',(req,res)=>{
             if(!todo){
                 return res.sendStatus(404).send();
             }
-            res.send(todo)
+            return res.send(todo)
         });
         
 });

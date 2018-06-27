@@ -61,15 +61,14 @@ describe("Post /todos",()=>{
 
 describe("GET /todos", ()=>{
     before((done)=>{
-        Todo.insertMany(todos,(err,docs)=>{
-            if(err){
-                console.log(err);
-               return done(err);
-            }
+        Todo.insertMany(todos).then((docs)=>{
             console.log(docs);
             done();
+        },(err)=>{        
+               return done(err);
+            })
         });
-    });
+   
     it("should get all todos from the server", (done )=> {
        request(app)
         .get("/todos")

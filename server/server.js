@@ -19,8 +19,16 @@ app.post('/todos',(req,res)=>{
         res.status(400).send(err);
         throw new Error("Error Saving todo",err)
     })
+});
+app.get('/todos',(req,res)=>{
+    Todo.find({}).then((todos)=>{
+        res.send(todos);
+    },(err)=>{
+        res.send(400);
+        res,send(err);
+        //throw new Error("error fetching")
+    })
 })
-
 app.listen('3000',()=>{
     console.log('started server on 3000');
 })

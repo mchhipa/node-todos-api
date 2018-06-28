@@ -17,7 +17,7 @@ app.post('/todos',(req,res)=>{
        return res.send(result);
         //console.log(result);
     },(err)=>{
-      return  res.statusStatus(400).send(err);
+      return  res.sendStatus(400).send(err);
         //throw new Error("Error Saving todo",err)
     })
 });

@@ -141,7 +141,7 @@ describe('DELETE /todo/:id',()=>{
     });
 });
 describe('PATCH /todo/:id',()=>{
-    it("should update todo with id", (done )=>  {  
+    it("should change the complted status to true todo with id", (done )=>  {  
         let todo = { completed:true }    
         chai.request(app)
          .patch(`/todo/${todos[0]._id.toHexString()}`)
@@ -155,6 +155,26 @@ describe('PATCH /todo/:id',()=>{
              res.body.should.have.property("_id").eql(todos[0]._id.toHexString());
              Todo.findById({_id:todos[0]._id}).then((todo)=>{
                  expect(todo.completed).to.equal(true);
+                 expect(todo.completedAt).to.not.equal(null);
+                 done();
+             }).catch((err) => done(err))  
+         });
+    });
+    it("should complted status to false with id", (done )=>  {  
+        let todo = { completed:false }    
+        chai.request(app)
+         .patch(`/todo/${todos[0]._id.toHexString()}`)
+         .send(todo)
+         .end((err,res) =>{
+             if(err){
+                 done(err);
+             }
+             res.should.have.status(200);
+             //console.log(res.body.text)
+             res.body.should.have.property("_id").eql(todos[0]._id.toHexString());
+             Todo.findById({_id:todos[0]._id}).then((todo)=>{
+                 expect(todo.completed).to.equal(false);
+                 expect(todo.completedAt).to.equal(null);
                  done();
              }).catch((err) => done(err))  
          });

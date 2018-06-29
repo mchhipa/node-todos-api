@@ -155,7 +155,8 @@ describe('PATCH /todo/:id',()=>{
              res.body.should.have.property("_id").eql(todos[0]._id.toHexString());
              Todo.findById({_id:todos[0]._id}).then((todo)=>{
                  expect(todo.completed).to.equal(true);
-                 expect(todo.completedAt).to.not.equal(null);
+                 expect(todo.text).to.equal(todos[0].text);
+                 expect(todo.completedAt).to.be.a('number');
                  done();
              }).catch((err) => done(err))  
          });
@@ -173,6 +174,7 @@ describe('PATCH /todo/:id',()=>{
              //console.log(res.body.text)
              res.body.should.have.property("_id").eql(todos[0]._id.toHexString());
              Todo.findById({_id:todos[0]._id}).then((todo)=>{
+                 expect(todo.text).to.equal(todos[0].text);
                  expect(todo.completed).to.equal(false);
                  expect(todo.completedAt).to.equal(null);
                  done();

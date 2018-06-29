@@ -1,6 +1,7 @@
+
 const mongoose = require('mongoose');
 
+console.log("in mongoose" ,process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI);
 
-mongoose.connect('mongodb://localhost:27017/TodoApp');
-
-module.exports =  {mongoose}
+module.exports =  { mongoose }

@@ -14,10 +14,11 @@ const {authenticate}=require('./middleware/authenticate');
 
 const app = express();
 app.use(bodyParser.json());
-app.post('/todos',(req,res)=>{
- //   console.log(req.body);
+app.post('/todos',authenticate,(req,res)=>{
+
     const todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        createdBy: req.user._id
     })
     todo.save().then((doc)=>{
        res.send(doc);
@@ -26,32 +27,38 @@ app.post('/todos',(req,res)=>{
         res.status(400).send(e);
     })
 });
-app.get('/todos',(req,res)=>{
-    Todo.find({}).then((todos)=>{
+app.get('/todos',authenticate,(req,res)=>{
+    Todo.find({
+        createdBy: req.user._id
+    }).then((todos)=>{
         return res.send(todos);
     },(err)=>{
        return res.status(400).send(err);
         
     });
 });
-app.get('/todo/:id',(req,res)=>{
+app.get('/todo/:id',authenticate,(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
        return  res.status(404).end();
     }
-    Todo.findById(req.params.id)
-        .then((todo)=> {
-            if(!todo){
-                return res.status(404).send();
-            }
-            return res.send(todo)
-        });
-        
-});
-app.delete('/todo/:id',(req,res)=>{
+    Todo.findOne({
+                createdBy: req.user._id,
+                _id: req.params.id
+            }).then((todo)=> {
+                    if(!todo){
+                        return res.status(404).send();
+                    }
+                        return res.send(todo)
+            }).catch((e)=>done(e));
+    });
+app.delete('/todo/:id',authenticate,(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
         return  res.status(404).end();
      }
-     Todo.findByIdAndRemove(req.params.id)
+     Todo.findOneAndRemove({
+            createdBy: req.user._id,
+            _id: req.params.id
+        })
         .then((todo)=> {
             if(!todo){
                 return res.status(404).send({});
@@ -59,7 +66,7 @@ app.delete('/todo/:id',(req,res)=>{
             return res.send(todo);
         });
 });
-app.patch('/todo/:id',(req,res)=>{
+app.patch('/todo/:id',authenticate,(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
         return  res.status(404).end();
      }
@@ -72,7 +79,10 @@ app.patch('/todo/:id',(req,res)=>{
          newTodo.completed = false;
          newTodo.completedAt = null;
      }
-     Todo.findOneAndUpdate(req.params.id,{$set:newTodo},{new: true}).then((todo)=>{
+     Todo.findOneAndUpdate({
+                    createdBy: req.user._id,
+                    _id: req.params.id
+                },{$set:newTodo},{new: true}).then((todo)=>{
          if(!todo){
              return res.status(404).send();
          }
@@ -80,38 +90,45 @@ app.patch('/todo/:id',(req,res)=>{
             }).catch((err)=>res.status(400).send(err));
         });
 
-    app.post('/users',(req,res)=>{
+app.post('/users',(req,res)=>{
             //console.log(req.body);
-            let body = _.pick(req.body,["email","password"])
+        let body = _.pick(req.body,["email","password"])
             
-            let user = new User(body);
+        let user = new User(body);
           //  console.log(user);
-            user.save().then(()=>{
-                return user.generateAuthToken();
+       user.save().then(()=>{
+            return user.generateAuthToken();
                 
-                }).then((token)=>{
-                    res.header('x-auth',token).send(user);
-                }).catch((err)=> {
+            }).then((token)=>{
+                res.header('x-auth',token).send(user);
+            }).catch((err)=> {
                    // console.log(err)
-                    let message = JSON.stringify(err,undefined,2);
+                let message = JSON.stringify(err,undefined,2);
                     return res.status(400).send(message);
                 });
     });
     app.post('/users/login',(req,res)=>{
-        console.log(req.body);
+       // console.log(req.body);
         let body = _.pick(req.body,["email","password"])
         
         User.findByCredentials(body.email,body.password).then((user)=>{
-            res.header('x-auth',user.tokens[0].token).send(user);
+            return user.generateAuthToken().then((token) => {
+                res.header('x-auth', token).send(user);
+              });                
         }).catch((e)=>{
             res.status(400).send("invalid email or password");
         });
 
 });
     
-    app.get('/users/me',authenticate,(req,res)=>{
+app.get('/users/me',authenticate,(req,res)=>{
         res.send(req.user);
     });
+app.delete('/users/me/token',authenticate,(req,res)=>{
+    req.user.removeToken(req.token).then((user)=>{
+        res.status(200).send(user);
+    }).catch(()=>send.status(400).send());
+});
 app.listen('3000',()=>{
     console.log('started server on 3000');
 })

@@ -6,6 +6,7 @@ const _ = require('lodash');
 
 
 
+
 const { mongoose} = require('./db/mongoose');
 const {User} = require('./models/user');
 const {Todo} = require('./models/todo');
@@ -96,6 +97,17 @@ app.patch('/todo/:id',(req,res)=>{
                     return res.status(400).send(message);
                 });
     });
+    app.post('/users/login',(req,res)=>{
+        console.log(req.body);
+        let body = _.pick(req.body,["email","password"])
+        
+        User.findByCredentials(body.email,body.password).then((user)=>{
+            res.header('x-auth',user.tokens[0].token).send(user);
+        }).catch((e)=>{
+            res.status(400).send("invalid email or password");
+        });
+
+});
     
     app.get('/users/me',authenticate,(req,res)=>{
         res.send(req.user);

@@ -36,16 +36,16 @@ const UserSchema = new mongoose.Schema({
 UserSchema.statics.findByToken = function(token){
     let User = this;
     let decoded;
-    console.log(token);
+  //  console.log(token);
     try{
         //console.log(token);
         decoded = jwt.verify(token,'p@ssword');
         
     }catch(e){
-            console.log(e)
+          //  console.log(e)
             return Promise.reject(e)
     }
-    console.log(decoded)
+   // console.log(decoded)
     return User.findOne({
             '_id': decoded._id,
             'tokens.token':token,

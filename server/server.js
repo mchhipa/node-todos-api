@@ -14,34 +14,33 @@ const {authenticate}=require('./middleware/authenticate');
 const app = express();
 app.use(bodyParser.json());
 app.post('/todos',(req,res)=>{
-    console.log(req.body);
+ //   console.log(req.body);
     const todo = new Todo({
         text: req.body.text
     })
-    todo.save().then((result)=>{
-       return res.send(result);
+    todo.save().then((doc)=>{
+       res.send(doc);
         //console.log(result);
-    },(err)=>{
-      return  res.sendStatus(400).send(err);
-        //throw new Error("Error Saving todo",err)
+    },(e)=>{
+        res.status(400).send(e);
     })
 });
 app.get('/todos',(req,res)=>{
     Todo.find({}).then((todos)=>{
         return res.send(todos);
     },(err)=>{
-       return res.sendStatus(400).send(err);
+       return res.status(400).send(err);
         
     });
 });
 app.get('/todo/:id',(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
-       return  res.sendStatus(404).end();
+       return  res.status(404).end();
     }
     Todo.findById(req.params.id)
         .then((todo)=> {
             if(!todo){
-                return res.sendStatus(404).send();
+                return res.status(404).send();
             }
             return res.send(todo)
         });
@@ -49,7 +48,7 @@ app.get('/todo/:id',(req,res)=>{
 });
 app.delete('/todo/:id',(req,res)=>{
     if(!ObjectID.isValid(req.params.id)){
-        return  res.sendStatus(404).end();
+        return  res.status(404).end();
      }
      Todo.findByIdAndRemove(req.params.id)
         .then((todo)=> {

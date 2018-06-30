@@ -1,6 +1,7 @@
 
 const {ObjectID} = require('mongodb');
 const {app} = require('./../server');
+const {User} = require('./../models/user');
 const {Todo} = require('./../models/todo');
 const {expect} = require('chai');
 let chai = require('chai');
@@ -8,28 +9,11 @@ let chaiHttp =require('chai-http');
 chai.use(chaiHttp)
 chai.should();  // Modifies `Object.prototype`
 chai.use(chaiHttp);
-const todos=[{
-    _id: new ObjectID(),
-    text:"create todo app"
-},{
-    _id:new ObjectID(),
-    text:"update resume",
-},{
-    text:"write an email"
-},{
-    text:"walk the dog",
-},{
-    text:"check laundry"
-},{
-    text:"This is from postman"
-}];
-beforeEach((done) => {
-     Todo.remove({},(err)=>{
-        Todo.insertMany(todos);
-        done();
-    });
-    
-});
+const {todos,populateTodos,users,populateUsers} = require('./seed/seed');
+
+
+beforeEach(populateUsers);
+beforeEach(populateTodos);
         
 describe("Post /todos",()=>{
     it('should create a new todo',(done)=>{
@@ -39,7 +23,7 @@ describe("Post /todos",()=>{
             .send({text})
             .end((err,res)=>{
                 res.should.have.status(200);
-                console.log(res.body.text)
+              //  console.log(res.body.text)
                 res.body.should.have.property("text").eql(text);          
             
                 Todo.find({text:"Test todo text"}).then((todos)=>{
@@ -74,14 +58,14 @@ describe('Get /todo/:id',()=>{
                  done(err);
              }
              res.should.have.status(200);
-             console.log(res.body.text)
+            // console.log(res.body.text)
              res.body.should.have.property("text").eql(todos[0].text);
              done();
          });
     });
     it("should get todo 404 not found", (done)=>  {  
         var objid = new ObjectID().toHexString();   
-        console.log(objid);
+      //  console.log(objid);
         chai.request(app)
          .get(`/todo/${objid}`)
          .end((err,res) =>{
@@ -106,19 +90,19 @@ describe('Get /todo/:id',()=>{
     });
 });
 describe("GET /todos", ()=>{
-      
-    it("should get all todos from the server", (done )=> {
-       chai.request(app)
+    it("should get all todos from the server",  (done)=> {
+    //this.timeout(10000);
+      chai.request(app)
         .get("/todos")       
         .end((err,res)=>{
-            if(err){
-               return  done(err);
-            }
+           // console.log(res.body);
+             if(err){
+                done(err);
+             }
             res.should.have.status(200);
             expect(res.body.length).to.equal(6);
             done();
-        });
-
+        })
     });
 });
 describe('DELETE /todo/:id',()=>{
@@ -167,9 +151,7 @@ describe('PATCH /todo/:id',()=>{
          .patch(`/todo/${todos[0]._id.toHexString()}`)
          .send(todo)
          .end((err,res) =>{
-             if(err){
-                 done(err);
-             }
+             expect(err).to.be.null;
              res.should.have.status(200);
              //console.log(res.body.text)
              res.body.should.have.property("_id").eql(todos[0]._id.toHexString());
@@ -180,5 +162,75 @@ describe('PATCH /todo/:id',()=>{
                  done();
              }).catch((err) => done(err))  
          });
+    });
+});
+describe('GET /users/me',()=>{
+    it("Should return user if authenticated",(done)=>{
+       /// console.log(users[0].tokens[0].token);
+        chai.request(app)
+            .get('/users/me')
+            .set('x-auth',users[0].tokens[0].token)
+            .end((err,res)=>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(200);
+                expect(res.body.email).to.equal(users[0].email);
+                expect(res.body._id).to.equal(users[0]._id.toHexString())
+                done();
+            });
+    });
+    it("Should return 401 if not authenticated",(done)=>{
+        /// console.log(users[0].tokens[0].token);
+         chai.request(app)
+             .get('/users/me')
+             .set('x-auth','123abc')
+             .end((err,res)=>{
+                 expect(err).to.be.null;
+                 expect(res).to.have.status(401);
+                 done();
+             });
+     });
+});
+describe("POST /users",()=>{
+    it("should create a user",(done)=>{
+        let email = "mehboob2@chhipa.com";
+        let password = '123abc';
+        chai.request(app)
+            .post('/users')
+            .send({email,password})
+            .end((err,res)=>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(200);
+                expect(res).to.have.header('x-auth');
+                expect(res.body._id).to.not.null;
+                User.findOne({email:email}).then((user)=>{
+                    expect(user.email).to.equal(email);
+                    expect(user.password).to.not.equal(password);                    
+                    done();
+                }).catch(()=>done())
+            });
+    });
+    it("should return validation errors if request is invalid",(done)=>{
+        let email = "mehboob2@chhipa";
+        let password = '123abc';
+        chai.request(app)
+            .post('/users')
+            .send({email,password})
+            .end((err,res)=>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(400);
+                done();
+            });
+    });
+    it("should not create user if email in use",(done)=>{
+        let email = "mehboob@chhipa.com";
+        let password = '123abc';
+        chai.request(app)
+            .post('/users')
+            .send({email,password})
+            .end((err,res)=>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(400);
+                done();
+            });
     });
 });
